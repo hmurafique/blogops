@@ -1,0 +1,80 @@
+version: "3.9"
+services:
+  # databases
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  mongo-user:
+    image: mongo:6
+    volumes:
+      - mongo-user-data:/data/db
+    ports:
+      - "27017:27017"
+
+  mongo-comment:
+    image: mongo:6
+    volumes:
+      - mongo-comment-data:/data/db
+
+  mongo-notify:
+    image: mongo:6
+    volumes:
+      - mongo-notify-data:/data/db
+
+  # backend services
+  user-service:
+    build: ./backend/user-service
+    environment:
+      - MONGO_URI=mongodb://mongo-user:27017
+    ports:
+      - "5101:5101"
+    depends_on:
+      - mongo-user
+
+  comment-service:
+    build: ./backend/comment-service
+    environment:
+      - MONGO_URI=mongodb://mongo-comment:27017
+    ports:
+      - "5102:5102"
+    depends_on:
+      - mongo-comment
+
+  post-service:
+    build: ./backend/post-service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postdb
+    ports:
+      - "5103:5103"
+    depends_on:
+      - postgres
+
+  notification-service:
+    build: ./backend/notification-service
+    environment:
+      - MONGO_URI=mongodb://mongo-notify:27017
+    ports:
+      - "5104:5104"
+    depends_on:
+      - mongo-notify
+
+  frontend:
+    build: ./frontend/blog-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - post-service
+
+volumes:
+  pgdata:
+  mongo-user-data:
+  mongo-comment-data:
+  mongo-notify-data:

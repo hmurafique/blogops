@@ -3,3 +3,5 @@ uvicorn[standard]
 asyncpg
 databases[postgresql]
 pydantic
+sqlalchemy
+psycopg2-binary
